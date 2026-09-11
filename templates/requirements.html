@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Requirements</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+
+
+    <h2>Add Requirement</h2>
+
+    <form action="/requirements/{{ university[0] }}/add" method="POST">
+
+        <input type="text"
+               name="requirement_name"
+               placeholder="e.g. IELTS, SAT, Transcript"
+               required>
+
+        <button type="submit">Add Requirement</button>
+
+    </form>
+    
+
+    <div class="container">
+        <a href="/" class="back-button">← Back to Dashboard</a>
+
+        <h1>{{ university[1] }}</h1>
+
+        <h2>Application Requirements</h2>
+        {% if requirements %}
+
+        <h2>Application Progress</h2>
+
+        <p>{{ completion_percentage }}% complete</p>
+
+        <progress value="{{ completion_percentage }}" max="100">
+            {{ completion_percentage }}%
+        </progress>
+
+
+        <div class="requirements-list">
+
+            {% for requirement in requirements %}
+
+            <div class="requirement-item">
+
+                <form action="/requirements/{{ university[0] }}/toggle/{{ requirement[0] }}"
+                      method="POST">
+
+                    {% if requirement[3] == 1 %}
+
+                    <button type="submit"
+                            class="requirement-check completed">
+                        ✓
+                    </button>
+
+                    {% else %}
+
+                    <button type="submit"
+                            class="requirement-check">
+                    </button>
+
+                    {% endif %}
+
+                </form>
+
+
+                {% if requirement[3] == 1 %}
+
+                <span class="requirement-completed">
+                    {{ requirement[2] }}
+                </span>
+
+                {% else %}
+
+                <span>
+                    {{ requirement[2] }}
+                </span>
+
+                {% endif %}
+
+
+                <form class="delete-form"
+                      action="/requirements/{{ university[0] }}/delete/{{ requirement[0] }}"
+                      method="POST">
+
+                    <button type="submit" class="requirement-delete">
+                        Delete
+                    </button>
+
+                </form>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+        {% else %}
+
+        <p>No requirements added yet.</p>
+
+        {% endif %}
+
+    </div>
+
+</body>
+
+</html>

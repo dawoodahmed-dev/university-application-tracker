@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Edit University</title>
+    
+    <title>University Tracker</title>
+
+    <link rel="stylesheet"
+            href="{{ url_for('static', filename='style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+
+    <h1>Edit University</h1>
+
+    <form action="/update/{{ university[0] }}" method="POST">
+
+        <label>University Name:</label>
+        <input type="text" name="name" value="{{ university[1] }}" required>
+
+        <br><br>
+
+        <label>Country:</label>
+        <input type="text" name="country" value="{{ university[2] }}" required>
+
+        <br><br>
+
+        <label>Course:</label>
+        <input type="text" name="course" value="{{ university[3] }}">
+
+        <br><br>
+
+        <label>Deadline:</label>
+        <input type="date" name="deadline" value="{{ university[4] }}">
+
+        <br><br>
+
+        <label>Tuition:</label>
+        <input type="number" name="tuition" value="{{ university[5] }}">
+
+        <br><br>
+
+        <br><br>
+
+        <label>Status:</label>
+        <select name="status">
+            {% if university[6] == "Researching" %}
+            <option value="Researching" selected>Researching</option>
+            {% else %}
+            <option value="Researching">Researching</option>
+            {% endif %}
+
+            {% if university[6] == "Planning to Apply" %}
+            <option value="Planning to Apply" selected>Planning to Apply</option>
+            {% else %}
+            <option value="Planning to Apply">Planning to Apply</option>
+            {% endif %}
+
+            {% if university[6] == "Applied" %}
+            <option value="Applied" selected>Applied</option>
+            {% else %}
+            <option value="Applied">Applied</option>
+            {% endif %}
+
+            {% if university[6] == "Accepted" %}
+            <option value="Accepted" selected>Accepted</option>
+            {% else %}
+            <option value="Accepted">Accepted</option>
+            {% endif %}
+
+            {% if university[6] == "Rejected" %}
+            <option value="Rejected" selected>Rejected</option>
+            {% else %}
+            <option value="Rejected">Rejected</option>
+            {% endif %}
+        </select>
+
+        <br><br>
+
+        <label>Scholarship / Financial Aid:</label>
+        <input type="text"
+               name="scholarship"
+               value="{{ university[7] or '' }}">
+
+        <br><br>
+
+        <label>Requirements:</label>
+        <textarea name="requirements">{{ university[8] or '' }}</textarea>
+
+        <br><br>
+
+        <label>Notes:</label>
+        <textarea name="notes">{{ university[9] or '' }}</textarea>
+
+        <button type="submit">Save Changes</button>
+
+    </form>
+
+</body>
+
+</html>
