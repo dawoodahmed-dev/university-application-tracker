@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>UniTrack · University Application Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+
+    {% with notices = get_flashed_messages(with_categories=true) %}
+        {% for category, message in notices %}
+        <div class="flash-message flash-{{ category }}" role="status">
+            <span>{{ message }}</span>
+            <button type="button" class="flash-close" onclick="this.parentElement.remove()" aria-label="Close notification">×</button>
+        </div>
+        {% endfor %}
+    {% endwith %}
+
+    <div class="container">
+        <header class="app-header">
+            <a href="/" class="brand" aria-label="UniTrack home">
+                <span class="brand-mark">U</span>
+                <span>
+                    <strong>UniTrack</strong>
+                    <small>Application workspace</small>
+                </span>
+            </a>
+
+            <div class="account-menu">
+                <div class="user-chip">
+                    <span class="user-avatar">{{ session["username"][0]|upper }}</span>
+                    <span class="user-copy">
+                        <small>Signed in as</small>
+                        <strong>{{ session["username"] }}</strong>
+                    </span>
+                </div>
+
+                <form action="{{ url_for('logout') }}" method="POST">
+                    <button type="submit" class="ghost-button">Logout</button>
+                </form>
+            </div>
+        </header>
+
+        <main>
+            <section class="hero">
+                <div>
+                    <span class="eyebrow">Your application command center</span>
+                    <h1>University Application Tracker</h1>
+                    <p class="hero-copy">
+                        Keep deadlines, requirements and every application milestone in one clean workspace.
+                    </p>
+                </div>
+
+                <button type="button" class="primary-button hero-action" onclick="toggleForm(true)">
+                    <span class="button-icon">＋</span>
+                    Add University
+                </button>
+            </section>
+
+            <section class="dashboard" aria-label="Application summary">
+                <article class="dashboard-card stat-total">
+                    <div class="stat-icon">◎</div>
+                    <div>
+                        <span class="stat-label">Total universities</span>
+                        <p>{{ total }}</p>
+                    </div>
+                </article>
+
+                <article class="dashboard-card stat-planning">
+                    <div class="stat-icon">◷</div>
+                    <div>
+                        <span class="stat-label">Planning</span>
+                        <p>{{ planning }}</p>
+                    </div>
+                </article>
+
+                <article class="dashboard-card stat-applied">
+                    <div class="stat-icon">↗</div>
+                    <div>
+                        <span class="stat-label">Applied</span>
+                        <p>{{ applied }}</p>
+                    </div>
+                </article>
+
+                <article class="dashboard-card stat-accepted">
+                    <div class="stat-icon">✓</div>
+                    <div>
+                        <span class="stat-label">Accepted</span>
+                        <p>{{ accepted }}</p>
+                    </div>
+                </article>
+            </section>
+
+            <section class="workspace-panel">
+                <div class="section-heading">
+                    <div>
+                        <span class="eyebrow">Application workspace</span>
+                        <h2>Saved Universities</h2>
+                    </div>
+                    <span class="result-count">{{ total }} shown</span>
+                </div>
+
+                <div class="toolbar">
+                    <form action="/" method="GET" class="search-form">
+                        <div class="search-input-wrap">
+                            <span class="search-icon">⌕</span>
+                            <input
+                                type="text"
+                                name="search"
+                                placeholder="Search university, country or course..."
+                                value="{{ search }}"
+                                aria-label="Search universities">
+                        </div>
+                        <button type="submit" class="secondary-button">Search</button>
+                    </form>
+
+                    <button
+                        type="button"
+                        class="filter-button"
+                        id="filter-toggle"
+                        onclick="toggleFilters()"
+                        aria-expanded="false"
+                        aria-controls="filter-panel">
+                        <span>Filter</span>
+                        {% if country or status %}
+                        <span class="filter-dot" title="Filters active"></span>
+                        {% endif %}
+                    </button>
+                </div>
+
+                <div id="filter-panel" class="filter-panel hidden">
+                    <div class="filter-panel-header">
+                        <div>
+                            <strong>Filter applications</strong>
+                            <span>Focus your tracker by country or status.</span>
+                        </div>
+                        <button type="button" class="icon-button" onclick="toggleFilters()" aria-label="Close filters">×</button>
+                    </div>
+
+                    <form action="/" method="GET" class="filter-form">
+                        <input type="hidden" name="search" value="{{ search }}">
+
+                        <div class="form-group">
+                            <label for="filter-country">Country</label>
+                            <select id="filter-country" name="country">
+                                <option value="">All Countries</option>
+                                {% for item in countries %}
+                                <option value="{{ item[0] }}" {% if country == item[0] %}selected{% endif %}>
+                                    {{ item[0] }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="filter-status">Status</label>
+                            <select id="filter-status" name="status">
+                                <option value="">All Statuses</option>
+                                <option value="Researching" {% if status == "Researching" %}selected{% endif %}>Researching</option>
+                                <option value="Planning to Apply" {% if status == "Planning to Apply" %}selected{% endif %}>Planning to Apply</option>
+                                <option value="Applied" {% if status == "Applied" %}selected{% endif %}>Applied</option>
+                                <option value="Accepted" {% if status == "Accepted" %}selected{% endif %}>Accepted</option>
+                                <option value="Rejected" {% if status == "Rejected" %}selected{% endif %}>Rejected</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-actions">
+                            <button type="submit" class="primary-button">Apply Filters</button>
+                            <a href="/" class="reset-filter">Reset</a>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            {% if upcoming_deadlines %}
+            <section class="deadline-section">
+                <div class="deadline-header">
+                    <div>
+                        <span class="eyebrow">Time-sensitive</span>
+                        <h2>Upcoming Deadlines</h2>
+                        <p>Applications closing within the next 30 days.</p>
+                    </div>
+                    <span class="deadline-badge">{{ upcoming_deadlines|length }} upcoming</span>
+                </div>
+
+                <div class="deadline-list">
+                    {% for deadline in upcoming_deadlines %}
+                        {% if deadline[2] <= 7 %}
+                        <article class="deadline-item deadline-urgent">
+                            <span class="deadline-accent"></span>
+                            <div class="deadline-info">
+                                <strong>{{ deadline[0] }}</strong>
+                                <span>{{ deadline[1] }}</span>
+                            </div>
+                            <div class="deadline-count">
+                                {{ deadline[2] }}
+                                <span>days left</span>
+                            </div>
+                        </article>
+
+                        {% elif deadline[2] <= 14 %}
+                        <article class="deadline-item deadline-soon">
+                            <span class="deadline-accent"></span>
+                            <div class="deadline-info">
+                                <strong>{{ deadline[0] }}</strong>
+                                <span>{{ deadline[1] }}</span>
+                            </div>
+                            <div class="deadline-count">
+                                {{ deadline[2] }}
+                                <span>days left</span>
+                            </div>
+                        </article>
+
+                        {% else %}
+                        <article class="deadline-item">
+                            <span class="deadline-accent"></span>
+                            <div class="deadline-info">
+                                <strong>{{ deadline[0] }}</strong>
+                                <span>{{ deadline[1] }}</span>
+                            </div>
+                            <div class="deadline-count">
+                                {{ deadline[2] }}
+                                <span>days left</span>
+                            </div>
+                        </article>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
+            {% if universities %}
+            <section class="university-grid" aria-label="Saved universities">
+                {% for university in universities %}
+                <article class="university-card">
+                    <div class="card-topline">
+                        {% if university[6] == "Researching" %}
+                        <span class="status-badge status-researching">Researching</span>
+                        {% elif university[6] == "Planning to Apply" %}
+                        <span class="status-badge status-planning-to-apply">Planning to Apply</span>
+                        {% elif university[6] == "Applied" %}
+                        <span class="status-badge status-applied">Applied</span>
+                        {% elif university[6] == "Accepted" %}
+                        <span class="status-badge status-accepted">Accepted</span>
+                        {% elif university[6] == "Rejected" %}
+                        <span class="status-badge status-rejected">Rejected</span>
+                        {% else %}
+                        <span class="status-badge status-not-set">Not set</span>
+                        {% endif %}
+
+                        <span class="readiness-badge">{{ readiness[university[0]] }}</span>
+                    </div>
+
+                    <div class="card-heading">
+                        <h3>{{ university[1] }}</h3>
+                        <p class="course-name">{{ university[3] or "Course not set" }}</p>
+                    </div>
+
+                    <div class="card-main-info">
+                        <div class="info-tile">
+                            <span class="info-label">Deadline</span>
+
+                            {% if deadline_info[university[0]] is not none %}
+                                {% if deadline_info[university[0]] < 0 %}
+                                <strong class="deadline-value deadline-value-passed">Passed</strong>
+                                {% elif deadline_info[university[0]] == 0 %}
+                                <strong class="deadline-value deadline-value-urgent">Today</strong>
+                                {% elif deadline_info[university[0]] <= 7 %}
+                                <strong class="deadline-value deadline-value-urgent">
+                                    {{ deadline_info[university[0]] }} days
+                                </strong>
+                                {% elif deadline_info[university[0]] <= 14 %}
+                                <strong class="deadline-value deadline-value-soon">
+                                    {{ deadline_info[university[0]] }} days
+                                </strong>
+                                {% else %}
+                                <strong class="deadline-value">
+                                    {{ deadline_info[university[0]] }} days
+                                </strong>
+                                {% endif %}
+                            {% else %}
+                            <strong class="deadline-value muted">Not set</strong>
+                            {% endif %}
+                        </div>
+
+                        <div class="info-tile">
+                            <span class="info-label">Requirements</span>
+                            <strong>{{ requirement_progress[university[0]] }}%</strong>
+                        </div>
+                    </div>
+
+                    <div class="card-progress">
+                        <div class="progress-copy">
+                            <span>Application readiness</span>
+                            <strong>{{ requirement_progress[university[0]] }}%</strong>
+                        </div>
+                        <progress value="{{ requirement_progress[university[0]] }}" max="100">
+                            {{ requirement_progress[university[0]] }}%
+                        </progress>
+                    </div>
+
+                    <details class="additional-details">
+                        <summary class="additional-title">
+                            <span>Additional details</span>
+                            <span class="details-chevron">⌄</span>
+                        </summary>
+
+                        <div class="additional-content">
+                            <div class="detail-row">
+                                <span>Country</span>
+                                <strong>{{ university[2] }}</strong>
+                            </div>
+
+                            <div class="detail-row">
+                                <span>Tuition</span>
+                                <strong>{{ university[5] if university[5] is not none else "Not set" }}</strong>
+                            </div>
+
+                            <div class="detail-row">
+                                <span>Scholarship</span>
+                                <strong>{{ university[7] or "Not set" }}</strong>
+                            </div>
+
+                            <div class="detail-row detail-row-notes">
+                                <span>Notes</span>
+                                <strong>{{ university[9] or "No notes yet" }}</strong>
+                            </div>
+                        </div>
+                    </details>
+
+                    <div class="card-actions">
+                        <a href="/requirements/{{ university[0] }}" class="primary-link-button">
+                            Requirements
+                        </a>
+
+                        <a href="/edit/{{ university[0] }}" class="secondary-link-button">
+                            Edit
+                        </a>
+
+                        <form
+                            action="/delete/{{ university[0] }}"
+                            method="POST"
+                            onsubmit="return confirm('Delete this university and all its requirements?');">
+                            <button type="submit" class="danger-button" aria-label="Delete {{ university[1] }}">
+                                Delete
+                            </button>
+                        </form>
+                    </div>
+                </article>
+                {% endfor %}
+            </section>
+
+            {% else %}
+            <section class="no-results">
+                <div class="empty-icon">⌕</div>
+                <h3>No universities found</h3>
+                <p>Try a different search, reset your filters, or add your first university.</p>
+                <button type="button" class="primary-button" onclick="toggleForm(true)">Add University</button>
+            </section>
+            {% endif %}
+        </main>
+    </div>
+
+    <div id="add-form-container" class="modal-shell hidden" aria-hidden="true">
+        <div class="form-card modal-card" role="dialog" aria-modal="true" aria-labelledby="add-university-title">
+            <div class="modal-header">
+                <div>
+                    <span class="eyebrow">New application</span>
+                    <h2 id="add-university-title">Add University</h2>
+                    <p>Save the essentials now. You can edit everything later.</p>
+                </div>
+
+                <button type="button" class="icon-button modal-close" onclick="toggleForm(false)" aria-label="Close form">×</button>
+            </div>
+
+            <form action="/add" method="POST">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="university-name">University Name</label>
+                        <input id="university-name" type="text" name="name" placeholder="e.g. Saarland University" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="university-country">Country</label>
+                        <input id="university-country" type="text" name="country" placeholder="e.g. Germany" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="university-course">Course</label>
+                        <input id="university-course" type="text" name="course" placeholder="e.g. B.Sc. Computer Science">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="university-deadline">Deadline</label>
+                        <input id="university-deadline" type="date" name="deadline">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="university-tuition">Tuition</label>
+                        <input id="university-tuition" type="number" name="tuition" placeholder="Annual / semester amount">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="university-status">Status</label>
+                        <select id="university-status" name="status">
+                            <option value="Researching">Researching</option>
+                            <option value="Planning to Apply">Planning to Apply</option>
+                            <option value="Applied">Applied</option>
+                            <option value="Accepted">Accepted</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="university-scholarship">Scholarship / Financial Aid</label>
+                    <input id="university-scholarship" type="text" name="scholarship" placeholder="Scholarship name, amount or notes">
+                </div>
+
+                <div class="form-group">
+                    <label for="university-requirements">Requirements</label>
+                    <textarea id="university-requirements" name="requirements" placeholder="General requirements or reminders"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="university-notes">Notes</label>
+                    <textarea id="university-notes" name="notes" placeholder="Anything else you want to remember"></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="secondary-button" onclick="toggleForm(false)">Cancel</button>
+                    <button type="submit" class="primary-button">Save University</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleFilters() {
+            const panel = document.getElementById("filter-panel");
+            const button = document.getElementById("filter-toggle");
+            const isHidden = panel.classList.toggle("hidden");
+            button.setAttribute("aria-expanded", String(!isHidden));
+        }
+
+        function toggleForm(forceOpen) {
+            const modal = document.getElementById("add-form-container");
+            const shouldOpen = typeof forceOpen === "boolean"
+                ? forceOpen
+                : modal.classList.contains("hidden");
+
+            modal.classList.toggle("hidden", !shouldOpen);
+            modal.setAttribute("aria-hidden", String(!shouldOpen));
+            document.body.classList.toggle("modal-open", shouldOpen);
+
+            if (shouldOpen) {
+                window.setTimeout(() => {
+                    const firstInput = document.getElementById("university-name");
+                    if (firstInput) firstInput.focus();
+                }, 50);
+            }
+        }
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape") {
+                toggleForm(false);
+            }
+        });
+
+        document.getElementById("add-form-container").addEventListener("click", function (event) {
+            if (event.target === this) {
+                toggleForm(false);
+            }
+        });
+
+        window.setTimeout(() => {
+            document.querySelectorAll(".flash-message").forEach((flash) => {
+                flash.classList.add("flash-hide");
+                window.setTimeout(() => flash.remove(), 250);
+            });
+        }, 4000);
+    </script>
+</body>
+</html>

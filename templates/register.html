@@ -2,76 +2,319 @@
 <html lang="en">
 
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="UTF-8">
-    <title>Create Account</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Create Account · UniTrack</title>
 
     <link rel="stylesheet"
           href="{{ url_for('static', filename='style.css') }}">
 </head>
 
-<body>
+<body class="auth-page">
 
-    <div class="container">
-        <div class="auth-card">
+    <main class="auth-shell">
 
-            <h1>Create Account</h1>
+        <!-- LEFT SIDE -->
+        <section class="auth-showcase">
 
-            <p class="auth-subtitle">
-                Create an account to start tracking your applications.
+            <div class="auth-showcase-brand">
+
+                <div class="brand-logo">
+                    U
+                </div>
+
+                <div class="brand-copy">
+                    <strong>UniTrack</strong>
+                    <span>Application Hub</span>
+                </div>
+
+            </div>
+
+
+            <div class="auth-showcase-content">
+
+                <span class="auth-showcase-badge">
+                    ✦ Start your application journey
+                </span>
+
+                <h1>
+                    Organise your future
+                    <span>from day one.</span>
+                </h1>
+
+                <p>
+                    Create your personal application workspace and keep every
+                    university, deadline and requirement under control.
+                </p>
+
+
+                <div class="auth-feature-list">
+
+                    <div class="auth-feature">
+
+                        <div class="auth-feature-icon">
+                            ▦
+                        </div>
+
+                        <div>
+                            <strong>Build your shortlist</strong>
+
+                            <span>
+                                Store every university you're considering.
+                            </span>
+                        </div>
+
+                    </div>
+
+
+                    <div class="auth-feature">
+
+                        <div class="auth-feature-icon">
+                            ✓
+                        </div>
+
+                        <div>
+                            <strong>Track your progress</strong>
+
+                            <span>
+                                Complete requirements one step at a time.
+                            </span>
+                        </div>
+
+                    </div>
+
+
+                    <div class="auth-feature">
+
+                        <div class="auth-feature-icon">
+                            ◷
+                        </div>
+
+                        <div>
+                            <strong>Stay ahead of deadlines</strong>
+
+                            <span>
+                                Keep important application dates visible.
+                            </span>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <p class="auth-showcase-footer">
+                One workspace. Every application.
             </p>
 
-            {% if error %}
-            <p class="auth-error" role="alert">
-                {{ error }}
-            </p>
-            {% endif %}
+        </section>
 
-            <form action="{{ url_for('register') }}" method="POST">
 
-                <label for="username">Username</label>
+        <!-- REGISTER SIDE -->
+        <section class="auth-form-side">
 
-                <input type="text"
-                       id="username"
-                       name="username"
-                       value="{{ username }}"
-                       autocomplete="username"
-                       required>
+            <div class="auth-form-container">
 
-                <label for="email">Email</label>
+                <!-- MOBILE BRAND -->
+                <div class="auth-mobile-brand">
 
-                <input type="email"
-                       id="email"
-                       name="email"
-                       value="{{ email }}"
-                       autocomplete="email"
-                       required>
+                    <div class="brand-logo small">
+                        U
+                    </div>
 
-                <label for="password">Password</label>
+                    <strong>
+                        UniTrack
+                    </strong>
 
-                <input type="password"
-                       id="password"
-                       name="password"
-                       autocomplete="new-password"
-                       required>
+                </div>
 
-                <label class="show-password">
-                    <input type="checkbox"
-                           onchange="document.getElementById('password').type = this.checked ? 'text' : 'password';">
-                    Show password
-                </label>
 
-                <button type="submit">Create Account</button>
+                <!-- HEADING -->
+                <div class="auth-heading">
 
-            </form>
+                    <span class="eyebrow">
+                        Get started
+                    </span>
 
-            <p>
-                Already have an account?
-                <a href="{{ url_for('login') }}">Login</a>
-            </p>
+                    <h2>
+                        Create your account
+                    </h2>
 
-        </div>
-    </div>
+                    <p>
+                        Start tracking your university applications.
+                    </p>
+
+                </div>
+
+
+                <!-- ERROR -->
+                {% if error %}
+
+                <div class="modern-auth-error"
+                     role="alert">
+
+                    <span class="modern-auth-error-icon">
+                        !
+                    </span>
+
+                    <span>
+                        {{ error }}
+                    </span>
+
+                </div>
+
+                {% endif %}
+
+
+                <!-- REGISTER FORM -->
+                <form action="{{ url_for('register') }}"
+                      method="POST"
+                      class="modern-auth-form">
+
+
+                    <!-- USERNAME -->
+                    <div class="auth-field">
+
+                        <label for="username">
+                            Username
+                        </label>
+
+                        <div class="auth-input-wrap">
+
+                            <span class="auth-input-icon">
+                                ◉
+                            </span>
+
+                            <input type="text"
+                                   id="username"
+                                   name="username"
+                                   value="{{ username }}"
+                                   placeholder="Choose a username"
+                                   autocomplete="username"
+                                   required>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- EMAIL -->
+                    <div class="auth-field">
+
+                        <label for="email">
+                            Email address
+                        </label>
+
+                        <div class="auth-input-wrap">
+
+                            <span class="auth-input-icon">
+                                @
+                            </span>
+
+                            <input type="email"
+                                   id="email"
+                                   name="email"
+                                   value="{{ email }}"
+                                   placeholder="you@example.com"
+                                   autocomplete="email"
+                                   required>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- PASSWORD -->
+                    <div class="auth-field">
+
+                        <label for="password">
+                            Password
+                        </label>
+
+                        <div class="auth-input-wrap">
+
+                            <span class="auth-input-icon">
+                                •
+                            </span>
+
+                            <input type="password"
+                                   id="password"
+                                   name="password"
+                                   placeholder="Create a password"
+                                   autocomplete="new-password"
+                                   required>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- SHOW PASSWORD -->
+                    <label class="modern-show-password">
+
+                        <input type="checkbox"
+                               onchange="document.getElementById('password').type = this.checked ? 'text' : 'password';">
+
+                        <span class="checkbox-ui"></span>
+
+                        <span>
+                            Show password
+                        </span>
+
+                    </label>
+
+
+                    <!-- CREATE ACCOUNT -->
+                    <button type="submit"
+                            class="auth-submit-button">
+
+                        Create Account
+
+                        <span>
+                            →
+                        </span>
+
+                    </button>
+
+                </form>
+
+
+                <!-- DIVIDER -->
+                <div class="auth-divider">
+
+                    <span></span>
+
+                    <p>
+                        Already have an account?
+                    </p>
+
+                    <span></span>
+
+                </div>
+
+
+                <!-- LOGIN -->
+                <a href="{{ url_for('login') }}"
+                   class="auth-secondary-action">
+
+                    Sign in instead
+
+                </a>
+
+
+                <p class="auth-security-note">
+                    Your universities and requirements stay linked to your account.
+                </p>
+
+            </div>
+
+        </section>
+
+    </main>
 
 </body>
+
 </html>

@@ -1,102 +1,535 @@
-<!DOCTYPE html>
-<html>
+﻿<!DOCTYPE html>
+<html lang="en">
 
 <head>
-    <title>Edit University</title>
-    
-    <title>University Tracker</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Edit {{ university[1] }} Â· UniTrack</title>
 
     <link rel="stylesheet"
-            href="{{ url_for('static', filename='style.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+          href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
 
-    <h1>Edit University</h1>
+    <div class="app-shell">
 
-    <form action="/update/{{ university[0] }}" method="POST">
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
 
-        <label>University Name:</label>
-        <input type="text" name="name" value="{{ university[1] }}" required>
+            <div class="sidebar-brand">
 
-        <br><br>
+                <div class="brand-logo">
+                    U
+                </div>
 
-        <label>Country:</label>
-        <input type="text" name="country" value="{{ university[2] }}" required>
+                <div class="brand-copy">
+                    <strong>UniTrack</strong>
+                    <span>Application Hub</span>
+                </div>
 
-        <br><br>
+            </div>
 
-        <label>Course:</label>
-        <input type="text" name="course" value="{{ university[3] }}">
 
-        <br><br>
+            <nav class="sidebar-nav">
 
-        <label>Deadline:</label>
-        <input type="date" name="deadline" value="{{ university[4] }}">
+                <a href="/" class="nav-item">
+                    <span class="nav-icon">âŒ‚</span>
+                    <span>Overview</span>
+                </a>
 
-        <br><br>
+                <a href="/#universities"
+                   class="nav-item active">
 
-        <label>Tuition:</label>
-        <input type="number" name="tuition" value="{{ university[5] }}">
+                    <span class="nav-icon">â–¦</span>
+                    <span>Universities</span>
 
-        <br><br>
+                </a>
 
-        <br><br>
+                <a href="/#deadlines"
+                   class="nav-item">
 
-        <label>Status:</label>
-        <select name="status">
-            {% if university[6] == "Researching" %}
-            <option value="Researching" selected>Researching</option>
-            {% else %}
-            <option value="Researching">Researching</option>
-            {% endif %}
+                    <span class="nav-icon">â—·</span>
+                    <span>Deadlines</span>
 
-            {% if university[6] == "Planning to Apply" %}
-            <option value="Planning to Apply" selected>Planning to Apply</option>
-            {% else %}
-            <option value="Planning to Apply">Planning to Apply</option>
-            {% endif %}
+                </a>
 
-            {% if university[6] == "Applied" %}
-            <option value="Applied" selected>Applied</option>
-            {% else %}
-            <option value="Applied">Applied</option>
-            {% endif %}
+                <a href="/requirements/{{ university[0] }}"
+                   class="nav-item">
 
-            {% if university[6] == "Accepted" %}
-            <option value="Accepted" selected>Accepted</option>
-            {% else %}
-            <option value="Accepted">Accepted</option>
-            {% endif %}
+                    <span class="nav-icon">âœ“</span>
+                    <span>Requirements</span>
 
-            {% if university[6] == "Rejected" %}
-            <option value="Rejected" selected>Rejected</option>
-            {% else %}
-            <option value="Rejected">Rejected</option>
-            {% endif %}
-        </select>
+                </a>
 
-        <br><br>
+            </nav>
 
-        <label>Scholarship / Financial Aid:</label>
-        <input type="text"
-               name="scholarship"
-               value="{{ university[7] or '' }}">
 
-        <br><br>
+            <div class="sidebar-bottom">
 
-        <label>Requirements:</label>
-        <textarea name="requirements">{{ university[8] or '' }}</textarea>
+                <div class="sidebar-tip">
 
-        <br><br>
+                    <span class="tip-icon">
+                        âœ¦
+                    </span>
 
-        <label>Notes:</label>
-        <textarea name="notes">{{ university[9] or '' }}</textarea>
+                    <div>
 
-        <button type="submit">Save Changes</button>
+                        <strong>
+                            Keep it updated
+                        </strong>
 
-    </form>
+                        <p>
+                            Keeping application details accurate makes your tracker more useful.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="sidebar-user">
+
+                    <div class="user-avatar">
+                        {{ session["username"][0]|upper }}
+                    </div>
+
+                    <div class="sidebar-user-copy">
+
+                        <strong>
+                            {{ session["username"] }}
+                        </strong>
+
+                        <span>
+                            Student account
+                        </span>
+
+                    </div>
+
+
+                    <form action="{{ url_for('logout') }}"
+                          method="POST">
+
+                        <button class="logout-icon"
+                                type="submit"
+                                title="Logout">
+
+                            â†—
+
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </aside>
+
+
+        <!-- MOBILE HEADER -->
+        <div class="mobile-topbar">
+
+            <a href="/"
+               class="mobile-brand">
+
+                <span class="brand-logo small">
+                    U
+                </span>
+
+                <strong>
+                    UniTrack
+                </strong>
+
+            </a>
+
+
+            <button class="mobile-menu-button"
+                    type="button"
+                    onclick="toggleMobileMenu()">
+
+                â˜°
+
+            </button>
+
+        </div>
+
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content edit-main">
+
+            <section class="edit-header">
+
+                <div>
+
+                    <a href="/"
+                       class="requirements-back">
+
+                        â† Back to Dashboard
+
+                    </a>
+
+
+                    <span class="eyebrow">
+                        Application settings
+                    </span>
+
+
+                    <h1>
+                        Edit University
+                    </h1>
+
+
+                    <p>
+                        Update your application details for
+                        <strong>{{ university[1] }}</strong>.
+                    </p>
+
+                </div>
+
+
+                <div class="edit-university-preview">
+
+                    <div class="edit-university-logo">
+
+                        {{ university[1][0]|upper }}
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            Editing
+                        </span>
+
+                        <strong>
+                            {{ university[1] }}
+                        </strong>
+
+                        <small>
+                            {{ university[3] or "Course not set" }}
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+
+            <form action="/update/{{ university[0] }}"
+                  method="POST"
+                  class="edit-form">
+
+
+                <!-- BASIC INFO -->
+                <section class="edit-section">
+
+                    <div class="edit-section-heading">
+
+                        <div class="edit-section-icon">
+                            â–¦
+                        </div>
+
+                        <div>
+
+                            <h2>
+                                University Details
+                            </h2>
+
+                            <p>
+                                Basic information about the university and course.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="edit-form-grid">
+
+                        <div class="field">
+
+                            <label>
+                                University Name
+                            </label>
+
+                            <input type="text"
+                                   name="name"
+                                   value="{{ university[1] }}"
+                                   required>
+
+                        </div>
+
+
+                        <div class="field">
+
+                            <label>
+                                Country
+                            </label>
+
+                            <input type="text"
+                                   name="country"
+                                   value="{{ university[2] }}"
+                                   required>
+
+                        </div>
+
+
+                        <div class="field edit-full-width">
+
+                            <label>
+                                Course
+                            </label>
+
+                            <input type="text"
+                                   name="course"
+                                   value="{{ university[3] or '' }}">
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+
+                <!-- APPLICATION INFO -->
+                <section class="edit-section">
+
+                    <div class="edit-section-heading">
+
+                        <div class="edit-section-icon">
+                            â—·
+                        </div>
+
+                        <div>
+
+                            <h2>
+                                Application Information
+                            </h2>
+
+                            <p>
+                                Manage deadlines, tuition and your current application status.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="edit-form-grid">
+
+
+                        <div class="field">
+
+                            <label>
+                                Deadline
+                            </label>
+
+                            <input type="date"
+                                   name="deadline"
+                                   value="{{ university[4] or '' }}">
+
+                        </div>
+
+
+                        <div class="field">
+
+                            <label>
+                                Tuition
+                            </label>
+
+                            <input type="number"
+                                   name="tuition"
+                                   value="{{ university[5] or '' }}">
+
+                        </div>
+
+
+                        <div class="field edit-full-width">
+
+                            <label>
+                                Application Status
+                            </label>
+
+                            <select name="status">
+
+                                <option value="Researching"
+                                        {% if university[6]=="Researching" %}selected{% endif %}>
+                                    Researching
+                                </option>
+
+                                <option value="Planning to Apply"
+                                        {% if university[6]=="Planning to Apply" %}selected{% endif %}>
+                                    Planning to Apply
+                                </option>
+
+                                <option value="Applied"
+                                        {% if university[6]=="Applied" %}selected{% endif %}>
+                                    Applied
+                                </option>
+
+                                <option value="Accepted"
+                                        {% if university[6]=="Accepted" %}selected{% endif %}>
+                                    Accepted
+                                </option>
+
+                                <option value="Rejected"
+                                        {% if university[6]=="Rejected" %}selected{% endif %}>
+                                    Rejected
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+
+                <!-- EXTRA DETAILS -->
+                <section class="edit-section">
+
+                    <div class="edit-section-heading">
+
+                        <div class="edit-section-icon">
+                            âœ¦
+                        </div>
+
+                        <div>
+
+                            <h2>
+                                Additional Details
+                            </h2>
+
+                            <p>
+                                Keep financial aid, requirements and personal notes together.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label>
+                            Scholarship / Financial Aid
+                        </label>
+
+                        <input type="text"
+                               name="scholarship"
+                               value="{{ university[7] or '' }}"
+                               placeholder="Scholarship name, amount or details">
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label>
+                            Requirements
+                        </label>
+
+                        <textarea name="requirements"
+                                  placeholder="General application requirements">{{ university[8] or '' }}</textarea>
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label>
+                            Notes
+                        </label>
+
+                        <textarea name="notes"
+                                  placeholder="Anything else you want to remember">{{ university[9] or '' }}</textarea>
+
+                    </div>
+
+                </section>
+
+
+
+                <!-- SAVE AREA -->
+                <section class="edit-save-bar">
+
+                    <div>
+
+                        <strong>
+                            Save your changes
+                        </strong>
+
+                        <span>
+                            Updates will appear immediately on your dashboard.
+                        </span>
+
+                    </div>
+
+
+                    <div class="edit-save-actions">
+
+                        <a href="/"
+                           class="secondary-button">
+
+                            Cancel
+
+                        </a>
+
+
+                        <button type="submit"
+                                class="primary-button">
+
+                            Save Changes
+
+                        </button>
+
+                    </div>
+
+                </section>
+
+
+            </form>
+
+        </main>
+
+    </div>
+
+
+    <script>
+
+        const sidebar =
+            document.getElementById("sidebar");
+
+
+        function toggleMobileMenu() {
+
+            sidebar.classList.toggle("mobile-open");
+
+        }
+
+
+        document.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (event.key === "Escape") {
+
+                    sidebar.classList.remove("mobile-open");
+
+                }
+
+            }
+        );
+
+    </script>
 
 </body>
 

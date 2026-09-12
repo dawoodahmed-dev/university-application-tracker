@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Account Settings · UniTrack</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+
+    <div class="toast toast-{{ category }}" role="status">
+        <span class="toast-dot"></span>
+        <span>{{ message }}</span>
+
+        <button type="button"
+                class="toast-close"
+                onclick="this.parentElement.remove()">
+            ×
+        </button>
+    </div>
+
+    {% endfor %}
+    {% endwith %}
+
+
+    <div class="app-shell">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+
+            <div class="sidebar-brand">
+
+                <div class="brand-logo">
+                    U
+                </div>
+
+                <div class="brand-copy">
+                    <strong>UniTrack</strong>
+                    <span>Application Hub</span>
+                </div>
+
+            </div>
+
+
+            <nav class="sidebar-nav">
+
+                <a href="/" class="nav-item">
+                    <span class="nav-icon">⌂</span>
+                    <span>Overview</span>
+                </a>
+
+                <a href="/#universities" class="nav-item">
+                    <span class="nav-icon">▦</span>
+                    <span>Universities</span>
+                </a>
+
+                <a href="/#deadlines" class="nav-item">
+                    <span class="nav-icon">◷</span>
+                    <span>Deadlines</span>
+                </a>
+
+                
+
+            </nav>
+
+
+            <div class="sidebar-bottom">
+
+                <div class="sidebar-user">
+
+                    <div class="user-avatar">
+                        {{ session["username"][0]|upper }}
+                    </div>
+
+                    <div class="sidebar-user-copy">
+
+                        <strong>
+                            {{ session["username"] }}
+                        </strong>
+
+                        <span>
+                            Student account
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <form action="{{ url_for('logout') }}"
+                      method="POST"
+                      class="sidebar-logout-form">
+
+                    <button type="submit"
+                            class="sidebar-logout-button">
+
+                        <span>↗</span>
+                        Logout
+
+                    </button>
+
+                </form>
+
+            </div>
+
+        </aside>
+
+
+        <!-- MOBILE HEADER -->
+        <div class="mobile-topbar">
+
+            <a href="/" class="mobile-brand">
+
+                <span class="brand-logo small">
+                    U
+                </span>
+
+                <strong>
+                    UniTrack
+                </strong>
+
+            </a>
+
+            <button type="button"
+                    class="mobile-menu-button"
+                    onclick="toggleMobileMenu()">
+
+                ☰
+
+            </button>
+
+        </div>
+
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content settings-main">
+
+            <section class="settings-header">
+
+                <div>
+
+                    <a href="/"
+                       class="requirements-back">
+                        ← Back to Dashboard
+                    </a>
+
+                    <span class="eyebrow">
+                        Your account
+                    </span>
+
+                    <h1>
+                        Account Settings
+                    </h1>
+
+                    <p>
+                        Manage your UniTrack profile and password.
+                    </p>
+
+                </div>
+
+
+                <div class="settings-profile-card">
+
+                    <div class="settings-avatar">
+
+                        {{ session["username"][0]|upper }}
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            Signed in as
+                        </span>
+
+                        <strong>
+                            {{ user[0] }}
+                        </strong>
+
+                        <small>
+                            {{ user[1] }}
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <div class="settings-grid">
+
+                <!-- USERNAME -->
+                <section class="settings-card">
+
+                    <div class="settings-card-heading">
+
+                        <div class="settings-icon">
+                            ◉
+                        </div>
+
+                        <div>
+
+                            <h2>
+                                Username
+                            </h2>
+
+                            <p>
+                                Change the name displayed throughout UniTrack.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <form action="/settings/username"
+                          method="POST"
+                          class="settings-form">
+
+                        <div class="field">
+
+                            <label for="username">
+                                Username
+                            </label>
+
+                            <input id="username"
+                                   type="text"
+                                   name="username"
+                                   value="{{ user[0] }}"
+                                   minlength="2"
+                                   required>
+
+                        </div>
+
+
+                        <button type="submit"
+                                class="primary-button">
+
+                            Save Username
+
+                        </button>
+
+                    </form>
+
+                </section>
+
+
+                <!-- PASSWORD -->
+                <section class="settings-card">
+
+                    <div class="settings-card-heading">
+
+                        <div class="settings-icon">
+                            ◆
+                        </div>
+
+                        <div>
+
+                            <h2>
+                                Password
+                            </h2>
+
+                            <p>
+                                Change your password securely.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <form action="/settings/password"
+                          method="POST"
+                          class="settings-form">
+
+
+                        <div class="field">
+
+                            <label for="current-password">
+                                Current Password
+                            </label>
+
+                            <input id="current-password"
+                                   type="password"
+                                   name="current_password"
+                                   autocomplete="current-password"
+                                   required>
+
+                        </div>
+
+
+                        <div class="field">
+
+                            <label for="new-password">
+                                New Password
+                            </label>
+
+                            <input id="new-password"
+                                   type="password"
+                                   name="new_password"
+                                   minlength="8"
+                                   autocomplete="new-password"
+                                   required>
+
+                        </div>
+
+
+                        <div class="field">
+
+                            <label for="confirm-password">
+                                Confirm New Password
+                            </label>
+
+                            <input id="confirm-password"
+                                   type="password"
+                                   name="confirm_password"
+                                   minlength="8"
+                                   autocomplete="new-password"
+                                   required>
+
+                        </div>
+
+
+                        <label class="modern-show-password">
+
+                            <input type="checkbox"
+                                   onchange="toggleSettingsPasswords(this.checked)">
+
+                            <span class="checkbox-ui"></span>
+
+                            <span>
+                                Show passwords
+                            </span>
+
+                        </label>
+
+
+                        <button type="submit"
+                                class="primary-button">
+
+                            Change Password
+
+                        </button>
+
+                    </form>
+
+                </section>
+
+            </div>
+
+        </main>
+
+    </div>
+
+
+    <script>
+
+        const sidebar =
+            document.getElementById("sidebar");
+
+
+        function toggleMobileMenu() {
+
+            sidebar.classList.toggle("mobile-open");
+
+        }
+
+
+        function toggleSettingsPasswords(show) {
+
+            const type =
+                show ? "text" : "password";
+
+            document.getElementById(
+                "current-password"
+            ).type = type;
+
+            document.getElementById(
+                "new-password"
+            ).type = type;
+
+            document.getElementById(
+                "confirm-password"
+            ).type = type;
+
+        }
+
+
+        setTimeout(() => {
+
+            document
+                .querySelectorAll(".toast")
+                .forEach(toast => {
+
+                    toast.classList.add(
+                        "toast-leave"
+                    );
+
+                    setTimeout(
+                        () => toast.remove(),
+                        250
+                    );
+
+                });
+
+        }, 4000);
+
+    </script>
+
+</body>
+
+</html>

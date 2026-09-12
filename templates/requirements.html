@@ -1,117 +1,462 @@
 <!DOCTYPE html>
-
-<html>
+<html lang="en">
 
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>Requirements</title>
+    <title>{{ university[1] }} · Requirements</title>
 
     <link rel="stylesheet"
           href="{{ url_for('static', filename='style.css') }}">
-
 </head>
 
 <body>
 
+    <div class="app-shell">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+
+            <div class="sidebar-brand">
+                <div class="brand-logo">U</div>
+
+                <div class="brand-copy">
+                    <strong>UniTrack</strong>
+                    <span>Application Hub</span>
+                </div>
+            </div>
 
 
-    <h2>Add Requirement</h2>
+            <nav class="sidebar-nav">
 
-    <form action="/requirements/{{ university[0] }}/add" method="POST">
+                <a href="/" class="nav-item">
+                    <span class="nav-icon">⌂</span>
+                    <span>Overview</span>
+                </a>
 
-        <input type="text"
-               name="requirement_name"
-               placeholder="e.g. IELTS, SAT, Transcript"
-               required>
+                <a href="/#universities" class="nav-item">
+                    <span class="nav-icon">▦</span>
+                    <span>Universities</span>
+                </a>
 
-        <button type="submit">Add Requirement</button>
+                <a href="/#deadlines" class="nav-item">
+                    <span class="nav-icon">◷</span>
+                    <span>Deadlines</span>
+                </a>
 
-    </form>
-    
+                <div class="nav-item active">
+                    <span class="nav-icon">✓</span>
+                    <span>Requirements</span>
+                </div>
 
-    <div class="container">
-        <a href="/" class="back-button">← Back to Dashboard</a>
-
-        <h1>{{ university[1] }}</h1>
-
-        <h2>Application Requirements</h2>
-        {% if requirements %}
-
-        <h2>Application Progress</h2>
-
-        <p>{{ completion_percentage }}% complete</p>
-
-        <progress value="{{ completion_percentage }}" max="100">
-            {{ completion_percentage }}%
-        </progress>
+            </nav>
 
 
-        <div class="requirements-list">
+            <div class="sidebar-bottom">
 
-            {% for requirement in requirements %}
+                <div class="sidebar-tip">
+                    <span class="tip-icon">✦</span>
 
-            <div class="requirement-item">
+                    <div>
+                        <strong>Application checklist</strong>
 
-                <form action="/requirements/{{ university[0] }}/toggle/{{ requirement[0] }}"
-                      method="POST">
-
-                    {% if requirement[3] == 1 %}
-
-                    <button type="submit"
-                            class="requirement-check completed">
-                        ✓
-                    </button>
-
-                    {% else %}
-
-                    <button type="submit"
-                            class="requirement-check">
-                    </button>
-
-                    {% endif %}
-
-                </form>
+                        <p>
+                            Complete each requirement before submitting your application.
+                        </p>
+                    </div>
+                </div>
 
 
-                {% if requirement[3] == 1 %}
+                <div class="sidebar-user">
 
-                <span class="requirement-completed">
-                    {{ requirement[2] }}
-                </span>
+                    <div class="user-avatar">
+                        {{ session["username"][0]|upper }}
+                    </div>
 
-                {% else %}
+                    <div class="sidebar-user-copy">
+                        <strong>{{ session["username"] }}</strong>
+                        <span>Student account</span>
+                    </div>
 
-                <span>
-                    {{ requirement[2] }}
-                </span>
+                    <form action="{{ url_for('logout') }}"
+                          method="POST">
 
-                {% endif %}
+                        <button class="logout-icon"
+                                type="submit"
+                                title="Logout">
+                            ↗
+                        </button>
 
+                    </form>
 
-                <form class="delete-form"
-                      action="/requirements/{{ university[0] }}/delete/{{ requirement[0] }}"
-                      method="POST">
-
-                    <button type="submit" class="requirement-delete">
-                        Delete
-                    </button>
-
-                </form>
+                </div>
 
             </div>
 
-            {% endfor %}
+        </aside>
+
+
+        <!-- MOBILE HEADER -->
+        <div class="mobile-topbar">
+
+            <a href="/" class="mobile-brand">
+
+                <span class="brand-logo small">U</span>
+
+                <strong>UniTrack</strong>
+
+            </a>
+
+            <button class="mobile-menu-button"
+                    type="button"
+                    onclick="toggleMobileMenu()">
+                ☰
+            </button>
 
         </div>
 
-        {% else %}
 
-        <p>No requirements added yet.</p>
+        <!-- MAIN PAGE -->
+        <main class="main-content requirements-page">
 
-        {% endif %}
+            <a href="/"
+               class="requirements-back">
+                ← Back to Dashboard
+            </a>
+
+
+            <!-- PAGE HEADER -->
+            <section class="requirements-hero">
+
+                <div>
+
+                    <span class="eyebrow">
+                        Application checklist
+                    </span>
+
+                    <h1>{{ university[1] }}</h1>
+
+                    <p>
+                        Track everything you need before submitting your application.
+                    </p>
+
+                </div>
+
+
+                <div class="requirements-progress-circle">
+
+                    <strong>
+                        {{ completion_percentage }}%
+                    </strong>
+
+                    <span>Complete</span>
+
+                </div>
+
+            </section>
+
+
+            <!-- PROGRESS -->
+            <section class="requirements-progress-card">
+
+                <div class="requirements-progress-header">
+
+                    <div>
+
+                        <span class="eyebrow">
+                            Overall progress
+                        </span>
+
+                        <h2>Application Readiness</h2>
+
+                    </div>
+
+
+                    <strong>
+                        {{ completion_percentage }}%
+                    </strong>
+
+                </div>
+
+
+                <progress value="{{ completion_percentage }}"
+                          max="100">
+
+                    {{ completion_percentage }}%
+
+                </progress>
+
+
+                {% if completion_percentage == 100 %}
+
+                <p class="progress-message complete-message">
+                    ✓ All requirements completed
+                </p>
+
+                {% elif completion_percentage >= 75 %}
+
+                <p class="progress-message">
+                    You're almost ready to apply.
+                </p>
+
+                {% elif completion_percentage >= 40 %}
+
+                <p class="progress-message">
+                    Good progress — keep going.
+                </p>
+
+                {% else %}
+
+                <p class="progress-message">
+                    Start completing your application requirements.
+                </p>
+
+                {% endif %}
+
+            </section>
+
+
+            <div class="requirements-layout">
+
+
+                <!-- ADD REQUIREMENT -->
+                <section class="requirements-add-card">
+
+                    <div class="requirements-section-heading">
+
+                        <div>
+
+                            <span class="eyebrow">
+                                New item
+                            </span>
+
+                            <h2>Add Requirement</h2>
+
+                            <p>
+                                Add anything needed for this application.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <form action="/requirements/{{ university[0] }}/add"
+                          method="POST"
+                          class="requirements-add-form">
+
+                        <input type="text"
+                               name="requirement_name"
+                               placeholder="e.g. IELTS, SAT, Transcript"
+                               required>
+
+                        <button type="submit"
+                                class="primary-button">
+
+                            <span>＋</span>
+
+                            Add Requirement
+
+                        </button>
+
+                    </form>
+
+                </section>
+
+
+
+                <!-- CHECKLIST -->
+                <section class="requirements-checklist-card">
+
+                    <div class="requirements-section-heading">
+
+                        <div>
+
+                            <span class="eyebrow">
+                                Checklist
+                            </span>
+
+                            <h2>Application Requirements</h2>
+
+                            {% if requirements %}
+
+                            <p>
+                                Mark each item complete as you finish it.
+                            </p>
+
+                            {% else %}
+
+                            <p>
+                                Nothing has been added yet.
+                            </p>
+
+                            {% endif %}
+
+                        </div>
+
+
+                        {% if requirements %}
+
+                        <span class="panel-count">
+                            {{ requirements|length }} items
+                        </span>
+
+                        {% endif %}
+
+                    </div>
+
+
+
+                    {% if requirements %}
+
+                    <div class="modern-requirements-list">
+
+
+                        {% for requirement in requirements %}
+
+                        <div class="modern-requirement-item
+                                    {% if requirement[3] == 1 %}
+                                    requirement-done
+                                    {% endif %}">
+
+
+                            <!-- COMPLETE BUTTON -->
+                            <form action="/requirements/{{ university[0] }}/toggle/{{ requirement[0] }}"
+                                  method="POST">
+
+                                {% if requirement[3] == 1 %}
+
+                                <button type="submit"
+                                        class="modern-check completed"
+                                        title="Mark incomplete">
+
+                                    ✓
+
+                                </button>
+
+                                {% else %}
+
+                                <button type="submit"
+                                        class="modern-check"
+                                        title="Mark complete">
+                                </button>
+
+                                {% endif %}
+
+                            </form>
+
+
+
+                            <!-- REQUIREMENT TEXT -->
+                            <div class="requirement-content">
+
+                                {% if requirement[3] == 1 %}
+
+                                <span class="requirement-name requirement-completed">
+                                    {{ requirement[2] }}
+                                </span>
+
+                                <span class="requirement-status complete">
+                                    Completed
+                                </span>
+
+                                {% else %}
+
+                                <span class="requirement-name">
+                                    {{ requirement[2] }}
+                                </span>
+
+                                <span class="requirement-status">
+                                    Pending
+                                </span>
+
+                                {% endif %}
+
+                            </div>
+
+
+
+                            <!-- DELETE -->
+                            <form action="/requirements/{{ university[0] }}/delete/{{ requirement[0] }}"
+                                  method="POST"
+                                  class="modern-delete-form"
+                                  onsubmit="return confirm('Delete this requirement?');">
+
+                                <button type="submit"
+                                        class="modern-delete-button"
+                                        title="Delete requirement">
+
+                                    Delete
+
+                                </button>
+
+                            </form>
+
+
+                        </div>
+
+                        {% endfor %}
+
+
+                    </div>
+
+
+                    {% else %}
+
+
+                    <div class="requirements-empty">
+
+                        <div class="requirements-empty-icon">
+                            ✓
+                        </div>
+
+                        <h3>No requirements yet</h3>
+
+                        <p>
+                            Add IELTS, transcripts, essays, test scores,
+                            recommendations or anything else you need.
+                        </p>
+
+                    </div>
+
+
+                    {% endif %}
+
+
+                </section>
+
+            </div>
+
+        </main>
 
     </div>
+
+
+    <script>
+
+        const sidebar =
+            document.getElementById("sidebar");
+
+
+        function toggleMobileMenu() {
+
+            sidebar.classList.toggle("mobile-open");
+
+        }
+
+
+        document.addEventListener("keydown", function(event) {
+
+            if (event.key === "Escape") {
+
+                sidebar.classList.remove("mobile-open");
+
+            }
+
+        });
+
+    </script>
 
 </body>
 

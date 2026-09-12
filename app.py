@@ -1,13 +1,16 @@
 import os
-from datetime import datetime, date
+import hashlib
+import secrets
+import resend
+from datetime import datetime, date, timedelta, timezone
 
 import psycopg2
 from dotenv import load_dotenv
-from flask import Flask, abort, flash, redirect, render_template, request, session
+from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 load_dotenv()
-
+resend.api_key = os.environ["RESEND_API_KEY"]
 app = Flask(__name__)
 app.secret_key = os.environ["SECRET_KEY"]
 
@@ -29,7 +32,13 @@ def parse_tuition(value):
 
 @app.before_request
 def require_login():
-    public_endpoints = {"login", "register", "static"}
+    public_endpoints = {
+        "login",
+        "register",
+        "forgot_password",
+        "reset_password",
+        "static",
+    }
 
     if request.endpoint is None:
         return
@@ -51,6 +60,7 @@ def require_login():
 
     try:
         cursor = connection.cursor()
+
         cursor.execute(
             """
             SELECT id
@@ -60,14 +70,16 @@ def require_login():
             """,
             (university_id, user_id),
         )
+
         university = cursor.fetchone()
+
         cursor.close()
+
     finally:
         connection.close()
 
     if university is None:
         abort(404)
-
 
 @app.route("/")
 def home():
@@ -728,6 +740,487 @@ def login():
         email=email,
     )
 
+@app.route("/settings")
+def settings():
+    user_id = session["user_id"]
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute(
+            """
+            SELECT username, email
+            FROM users
+            WHERE id = %s
+            """,
+            (user_id,),
+        )
+
+        user = cursor.fetchone()
+
+    finally:
+        cursor.close()
+        connection.close()
+
+    if user is None:
+        session.clear()
+        return redirect("/login")
+
+    return render_template(
+        "settings.html",
+        user=user,
+    )
+
+
+@app.route("/settings/username", methods=["POST"])
+def update_username():
+    user_id = session["user_id"]
+
+    new_username = request.form.get(
+        "username",
+        "",
+    ).strip()
+
+    if not new_username:
+        flash(
+            "Username cannot be empty.",
+            "error",
+        )
+        return redirect("/settings")
+
+    if len(new_username) < 2:
+        flash(
+            "Username must be at least 2 characters.",
+            "error",
+        )
+        return redirect("/settings")
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        # Check whether another account already uses it
+        cursor.execute(
+            """
+            SELECT id
+            FROM users
+            WHERE LOWER(username) = LOWER(%s)
+            AND id != %s
+            """,
+            (
+                new_username,
+                user_id,
+            ),
+        )
+
+        existing_user = cursor.fetchone()
+
+        if existing_user:
+            flash(
+                "That username is already in use.",
+                "error",
+            )
+
+            return redirect("/settings")
+
+        cursor.execute(
+            """
+            UPDATE users
+            SET username = %s
+            WHERE id = %s
+            """,
+            (
+                new_username,
+                user_id,
+            ),
+        )
+
+        connection.commit()
+
+    except Exception:
+        connection.rollback()
+        raise
+
+    finally:
+        cursor.close()
+        connection.close()
+
+    # Update the username shown everywhere immediately
+    session["username"] = new_username
+
+    flash(
+        "Username updated successfully.",
+        "success",
+    )
+
+    return redirect("/settings")
+
+
+@app.route("/settings/password", methods=["POST"])
+def update_password():
+    user_id = session["user_id"]
+
+    current_password = request.form.get(
+        "current_password",
+        "",
+    )
+
+    new_password = request.form.get(
+        "new_password",
+        "",
+    )
+
+    confirm_password = request.form.get(
+        "confirm_password",
+        "",
+    )
+
+    if not current_password or not new_password or not confirm_password:
+        flash(
+            "Please fill in all password fields.",
+            "error",
+        )
+
+        return redirect("/settings")
+
+    if new_password != confirm_password:
+        flash(
+            "New passwords do not match.",
+            "error",
+        )
+
+        return redirect("/settings")
+
+    if len(new_password) < 8:
+        flash(
+            "New password must be at least 8 characters.",
+            "error",
+        )
+
+        return redirect("/settings")
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute(
+            """
+            SELECT password_hash
+            FROM users
+            WHERE id = %s
+            """,
+            (user_id,),
+        )
+
+        user = cursor.fetchone()
+
+        if user is None:
+            session.clear()
+            return redirect("/login")
+
+        current_hash = user[0]
+
+        if not check_password_hash(
+            current_hash,
+            current_password,
+        ):
+            flash(
+                "Current password is incorrect.",
+                "error",
+            )
+
+            return redirect("/settings")
+
+        new_password_hash = generate_password_hash(
+            new_password
+        )
+
+        cursor.execute(
+            """
+            UPDATE users
+            SET password_hash = %s
+            WHERE id = %s
+            """,
+            (
+                new_password_hash,
+                user_id,
+            ),
+        )
+
+        connection.commit()
+
+    except Exception:
+        connection.rollback()
+        raise
+
+    finally:
+        cursor.close()
+        connection.close()
+
+    flash(
+        "Password changed successfully.",
+        "success",
+    )
+
+    return redirect("/settings")
+
+
+
+
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    message = None
+    error = None
+    email = ""
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+
+        if not email:
+            error = "Please enter your email address."
+
+        else:
+            connection = get_db_connection()
+            cursor = connection.cursor()
+
+            try:
+                cursor.execute(
+                    """
+                    SELECT id
+                    FROM users
+                    WHERE LOWER(email) = LOWER(%s)
+                    """,
+                    (email,),
+                )
+
+                user = cursor.fetchone()
+
+                if user:
+                    user_id = user[0]
+
+                    # Old unused links become invalid
+                    cursor.execute(
+                        """
+                        UPDATE password_reset_tokens
+                        SET used = TRUE
+                        WHERE user_id = %s
+                        AND used = FALSE
+                        """,
+                        (user_id,),
+                    )
+
+                    token = secrets.token_urlsafe(32)
+
+                    token_hash = hashlib.sha256(
+                        token.encode("utf-8")
+                    ).hexdigest()
+
+                    expires_at = (
+                        datetime.now(timezone.utc)
+                        + timedelta(minutes=45)
+                    )
+
+                    cursor.execute(
+                        """
+                        INSERT INTO password_reset_tokens
+                        (user_id, token_hash, expires_at)
+                        VALUES (%s, %s, %s)
+                        """,
+                        (
+                            user_id,
+                            token_hash,
+                            expires_at,
+                        ),
+                    )
+
+                    connection.commit()
+
+                    reset_link = url_for(
+                        "reset_password",
+                        token=token,
+                        _external=True,
+                    )
+
+                    # TEMPORARY:
+                    # We will email this later.
+                    resend.Emails.send({
+                        "from": "UniTrack <onboarding@resend.dev>",
+                        "to": [email],
+                        "subject": "Reset your UniTrack password",
+                        "html": f"""
+                            <div style="font-family: Arial, sans-serif; max-width: 520px; margin: auto;">
+                                <h2>Reset your UniTrack password</h2>
+
+                                <p>
+                                    We received a request to reset the password for your
+                                    UniTrack account.
+                                </p>
+
+                                <p>
+                                    Click the button below to choose a new password.
+                                </p>
+
+                                <a href="{reset_link}"
+                                    style="
+                                        display: inline-block;
+                                        padding: 12px 20px;
+                                        background: #635bff;
+                                        color: white;
+                                        text-decoration: none;
+                                        border-radius: 8px;
+                                        font-weight: bold;
+                                    ">
+                                    Reset Password
+                                </a>
+
+                                <p style="margin-top: 24px; color: #666;">
+                                    This link expires in 45 minutes.
+                                </p>
+
+                                <p style="color: #666;">
+                                    If you didn't request a password reset,
+                                    you can ignore this email.
+                                </p>
+
+                                <p style="margin-top: 30px;">
+                                    — UniTrack
+                                </p>
+                            </div>
+                        """,
+                    })
+
+                message = (
+                    "If an account exists with that email, "
+                    "a password reset link has been created."
+                )
+
+            except Exception:
+                connection.rollback()
+                raise
+
+            finally:
+                cursor.close()
+                connection.close()
+
+    return render_template(
+        "forgot_password.html",
+        message=message,
+        error=error,
+        email=email,
+    )
+
+
+@app.route(
+    "/reset-password/<token>",
+    methods=["GET", "POST"],
+)
+def reset_password(token):
+    token_hash = hashlib.sha256(
+        token.encode("utf-8")
+    ).hexdigest()
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute(
+            """
+            SELECT id, user_id
+            FROM password_reset_tokens
+            WHERE token_hash = %s
+            AND used = FALSE
+            AND expires_at > NOW()
+            """,
+            (token_hash,),
+        )
+
+        reset_record = cursor.fetchone()
+
+        if reset_record is None:
+            return render_template(
+                "reset_password.html",
+                invalid=True,
+                error=None,
+            )
+
+        reset_id = reset_record[0]
+        user_id = reset_record[1]
+
+        error = None
+
+        if request.method == "POST":
+            new_password = request.form.get(
+                "new_password",
+                "",
+            )
+
+            confirm_password = request.form.get(
+                "confirm_password",
+                "",
+            )
+
+            if not new_password or not confirm_password:
+                error = "Please fill in both password fields."
+
+            elif len(new_password) < 8:
+                error = (
+                    "Password must be at least 8 characters."
+                )
+
+            elif new_password != confirm_password:
+                error = "Passwords do not match."
+
+            else:
+                new_password_hash = generate_password_hash(
+                    new_password
+                )
+
+                cursor.execute(
+                    """
+                    UPDATE users
+                    SET password_hash = %s
+                    WHERE id = %s
+                    """,
+                    (
+                        new_password_hash,
+                        user_id,
+                    ),
+                )
+
+                # Invalidate every reset token for this account
+                cursor.execute(
+                    """
+                    UPDATE password_reset_tokens
+                    SET used = TRUE
+                    WHERE user_id = %s
+                    """,
+                    (user_id,),
+                )
+
+                connection.commit()
+
+                flash(
+                    "Password reset successfully. You can now log in.",
+                    "success",
+                )
+
+                return redirect("/login")
+
+        return render_template(
+            "reset_password.html",
+            invalid=False,
+            error=error,
+        )
+
+    except Exception:
+        connection.rollback()
+        raise
+
+    finally:
+        cursor.close()
+        connection.close()
+
 
 @app.route("/logout", methods=["POST"])
 def logout():
@@ -737,3 +1230,4 @@ def logout():
 
 if __name__ == "__main__":
     app.run(debug=os.environ.get("FLASK_DEBUG", "0") == "1")
+
