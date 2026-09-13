@@ -76,15 +76,15 @@ if (
 
     glow.addColorStop(
         0,
-        `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.34)`
+        `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.52)`
     );
     glow.addColorStop(
         0.28,
-        `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.20)`
+        `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.32)`
     );
     glow.addColorStop(
         0.62,
-        `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.07)`
+        `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.12)`
     );
     glow.addColorStop(1, "rgba(180, 151, 207, 0)");
 
@@ -185,7 +185,7 @@ if (
             const size = 70 + strength * 165;
             const point = trail[i];
 
-            ctx.globalAlpha = opacity * strength * 0.33;
+            ctx.globalAlpha = opacity * strength * 0.48;
 
             ctx.drawImage(
                 sprite,
