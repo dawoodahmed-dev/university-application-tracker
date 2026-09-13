@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>UniTrack · University Application Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    {% with notices = get_flashed_messages(with_categories=true) %}
+    {% for category, message in notices %}
+
+    <div class="toast toast-{{ category }}" role="status">
+        <span class="toast-dot"></span>
+        <span>{{ message }}</span>
+        <button type="button"
+                class="toast-close"
+                onclick="this.parentElement.remove()">
+            ×
+        </button>
+    </div>
+
+    {% endfor %}
+    {% endwith %}
+
+    <div class="app-shell">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-logo">U</div>
+                <div class="brand-copy">
+                    <strong>UniTrack</strong>
+                    <span>Application Hub</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item">
+                    <span class="nav-icon">⌂</span>
+                    <span>Overview</span>
+                </a>
+                <a href="/universities" class="nav-item active">
+                    <span class="nav-icon">▦</span>
+                    <span>Universities</span>
+                </a>
+                <a href="/#deadlines" class="nav-item">
+                    <span class="nav-icon">◷</span>
+                    <span>Deadlines</span>
+                </a>
+                <button type="button" class="nav-item nav-button" onclick="openAddModal()">
+                    <span class="nav-icon">＋</span>
+                    <span>Add University</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="sidebar-tip">
+                    <span class="tip-icon">✦</span>
+                    <div>
+                        <strong>Stay organised</strong>
+                        <p>Keep every deadline and requirement in one place.</p>
+                    </div>
+                </div>
+
+                <a href="/settings"
+                   class="sidebar-user sidebar-user-link">
+
+                    <div class="user-avatar">
+                        {{ session["username"][0]|upper }}
+                    </div>
+
+                    <div class="sidebar-user-copy">
+                        <strong>{{ session["username"] }}</strong>
+                        <span>Account settings</span>
+                    </div>
+
+                    <span class="sidebar-user-arrow">›</span>
+
+                </a>
+                <form action="{{ url_for('logout') }}"
+                      method="POST"
+                      class="sidebar-logout-form">
+
+                    <button type="submit"
+                            class="sidebar-logout-button">
+
+                        <span>↗</span>
+                        Logout
+
+                    </button>
+
+                </form>
+
+            </div>
+        </aside>
+
+        <div class="mobile-topbar">
+            <a href="/" class="mobile-brand">
+                <span class="brand-logo small">U</span>
+                <strong>UniTrack</strong>
+            </a>
+            <button class="mobile-menu-button" type="button" onclick="toggleMobileMenu()">☰</button>
+        </div>
+
+        <main class="main-content">
+
+
+
+
+            <section class="universities-page" id="universities">
+                <div class="universities-top">
+
+                    <div class="universities-title">
+
+                        <span class="eyebrow">
+                            Application library
+                        </span>
+
+                        <h1>
+                            Your Universities
+                        </h1>
+
+                        <p>
+                            Explore and manage all of your university applications.
+                        </p>
+
+                    </div>
+
+
+                    <div class="universities-top-controls">
+
+                        <div class="universities-search-row">
+
+                            <form action="/universities"
+                                  method="GET"
+                                  class="search-form">
+
+                                <div class="search-box">
+
+                                    <span class="search-symbol">
+                                        ⌕
+                                    </span>
+
+                                    <input type="text"
+                                           name="search"
+                                           value="{{ search }}"
+                                           placeholder="Search universities...">
+
+                                </div>
+
+                                <button type="submit"
+                                        class="search-button">
+                                    Search
+                                </button>
+
+                            </form>
+
+
+                            <button type="button"
+                                    class="filter-toggle"
+                                    id="filter-toggle"
+                                    onclick="toggleFilters()">
+
+                                <span>☷</span>
+                                Filters
+
+                            </button>
+
+                        </div>
+
+
+                        <div class="university-view-toggle">
+
+                            <button type="button"
+                                    class="view-button active"
+                                    id="grid-view-button">
+
+                                ▦ Grid
+
+                            </button>
+
+                            <button type="button"
+                                    class="view-button"
+                                    id="showcase-view-button">
+
+                                ◈ Showcase
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="filter-drawer hidden" id="filter-panel">
+                    <form action="/universities" method="GET" class="filter-form">
+                        <input type="hidden" name="search" value="{{ search }}">
+
+                        <div class="field">
+                            <label>Country</label>
+                            <select name="country">
+                                <option value="">All Countries</option>
+                                {% for item in countries %}
+                                <option value="{{ item[0] }}">{{ item[0] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label>Status</label>
+                            <select name="status">
+                                <option value="">All Statuses</option>
+                                <option value="Researching">Researching</option>
+                                <option value="Planning to Apply">Planning to Apply</option>
+                                <option value="Applied">Applied</option>
+                                <option value="Accepted">Accepted</option>
+                                <option value="Rejected">Rejected</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-form-actions">
+                            <button type="submit" class="primary-button">Apply</button>
+                            <a href="/universities" class="text-button">Reset</a>
+                        </div>
+                    </form>
+                </div>
+
+                {% if universities %}
+
+                <div class="university-grid">
+
+                    {% for university in universities %}
+
+                    <article class="university-card">
+
+                        {% if university[12] %}
+
+                        <div class="university-card-image"
+                             style="
+                background-image:
+                linear-gradient(
+                    to bottom,
+                    rgba(19, 22, 36, 0.05),
+                    rgba(19, 22, 36, 0.85)
+                ),
+                url('{{ university[12] }}');
+             ">
+
+                            <div class="university-image-name">
+                                <span>{{ university[2] }}</span>
+                                <strong>{{ university[1] }}</strong>
+                            </div>
+
+                            {% if university[13] and university[14] %}
+
+                            <a href="{{ university[14] }}"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="university-photo-credit">
+                                Photo: {{ university[13] }}
+                            </a>
+
+                            {% endif %}
+
+                        </div>
+
+                        {% else %}
+
+                        <div class="university-card-image university-image-fallback">
+
+                            <span class="university-fallback-letter">
+                                {{ university[1][0]|upper }}
+                            </span>
+
+                        </div>
+
+                        {% endif %}
+
+
+                        <div class="university-card-header">
+
+                            <div class="university-monogram">
+                                {{ university[1][0]|upper }}
+                            </div>
+
+                            <div class="university-heading-copy">
+                                <h3>{{ university[1] }}</h3>
+                                <p>{{ university[3] or "Course not set" }}</p>
+                            </div>
+
+
+                            {% if university[6] == "Researching" %}
+
+                            <span class="status-badge status-researching">
+                                Researching
+                            </span>
+
+                            {% elif university[6] == "Planning to Apply" %}
+
+                            <span class="status-badge status-planning">
+                                Planning
+                            </span>
+
+                            {% elif university[6] == "Applied" %}
+
+                            <span class="status-badge status-applied">
+                                Applied
+                            </span>
+
+                            {% elif university[6] == "Accepted" %}
+
+                            <span class="status-badge status-accepted">
+                                Accepted
+                            </span>
+
+                            {% elif university[6] == "Rejected" %}
+
+                            <span class="status-badge status-rejected">
+                                Rejected
+                            </span>
+
+                            {% else %}
+
+                            <span class="status-badge status-neutral">
+                                Not set
+                            </span>
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <div class="application-metrics">
+
+                            <div class="metric">
+
+                                <span class="metric-label">
+                                    Deadline
+                                </span>
+
+                                {% if deadline_info[university[0]] is not none %}
+
+                                {% if deadline_info[university[0]] < 0 %}
+
+                                <strong class="metric-danger">
+                                    Passed
+                                </strong>
+
+                                {% elif deadline_info[university[0]] == 0 %}
+
+                                <strong class="metric-danger">
+                                    Today
+                                </strong>
+
+                                {% elif deadline_info[university[0]] <= 7 %}
+
+                                <strong class="metric-danger">
+                                    {{ deadline_info[university[0]] }} days
+                                </strong>
+
+                                {% elif deadline_info[university[0]] <= 14 %}
+
+                                <strong class="metric-warning">
+                                    {{ deadline_info[university[0]] }} days
+                                </strong>
+
+                                {% else %}
+
+                                <strong>
+                                    {{ deadline_info[university[0]] }} days
+                                </strong>
+
+                                {% endif %}
+
+                                {% else %}
+
+                                <strong class="metric-muted">
+                                    Not set
+                                </strong>
+
+                                {% endif %}
+
+                            </div>
+
+
+                            <div class="metric">
+
+                                <span class="metric-label">
+                                    Country
+                                </span>
+
+                                <strong>
+                                    {{ university[2] }}
+                                </strong>
+
+                            </div>
+
+
+                            <div class="metric">
+
+                                <span class="metric-label">
+                                    Progress
+                                </span>
+
+                                <strong>
+                                    {{ requirement_progress[university[0]] }}%
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="progress-section">
+
+                            <div class="progress-heading">
+
+                                <span>
+                                    Requirements completed
+                                </span>
+
+                                <strong>
+                                    {{ requirement_progress[university[0]] }}%
+                                </strong>
+
+                            </div>
+
+                            <progress value="{{ requirement_progress[university[0]] }}"
+                                      max="100">
+
+                                {{ requirement_progress[university[0]] }}%
+
+                            </progress>
+
+                        </div>
+
+
+                        <details class="details-panel">
+
+                            <summary>
+
+                                <span>
+                                    Application details
+                                </span>
+
+                                <span class="chevron">
+                                    ⌄
+                                </span>
+
+                            </summary>
+
+
+                            <div class="details-body">
+
+                                <div class="detail-row">
+
+                                    <span>
+                                        Tuition
+                                    </span>
+
+                                    <strong>
+                                        {{ university[5] if university[5] is not none else "Not set" }}
+                                    </strong>
+
+                                </div>
+
+
+                                <div class="detail-row">
+
+                                    <span>
+                                        Scholarship
+                                    </span>
+
+                                    <strong>
+                                        {{ university[7] or "Not set" }}
+                                    </strong>
+
+                                </div>
+
+
+                                <div class="detail-row">
+
+                                    <span>
+                                        Notes
+                                    </span>
+
+                                    <strong>
+                                        {{ university[9] or "No notes yet" }}
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+                        </details>
+
+
+                        <div class="university-actions">
+
+                            <a href="/requirements/{{ university[0] }}"
+                               class="card-primary-action">
+
+                                View Requirements
+
+                            </a>
+
+                            <a href="/edit/{{ university[0] }}"
+                               class="card-secondary-action">
+
+                                Edit
+
+                            </a>
+
+                            <form action="/delete/{{ university[0] }}"
+                                  method="POST"
+                                  onsubmit="return confirm('Delete this university and all its requirements?');">
+
+                                <button type="submit"
+                                        class="card-delete-action">
+
+                                    Delete
+
+                                </button>
+
+                            </form>
+
+                        </div>
+
+                    </article>
+
+                    {% endfor %}
+
+                </div>
+
+
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-graphic">＋</div>
+                    <h3>No universities found</h3>
+                    <p>Add your first university or change your search filters.</p>
+
+                </div>
+                {% endif %}
+            </section>
+        </main>
+    </div>
+
+    <div class="modal-backdrop hidden" id="add-form-container" aria-hidden="true">
+        <div class="modal-card" role="dialog" aria-modal="true">
+            <div class="modal-heading">
+                <div>
+                    <span class="eyebrow">New application</span>
+                    <h2>Add University</h2>
+                    <p>Start with the basics. You can change everything later.</p>
+                </div>
+                <button type="button" class="modal-close" onclick="closeAddModal()">×</button>
+            </div>
+
+            <form action="/add" method="POST" class="add-form">
+                <div class="form-grid">
+                    <div class="field">
+                        <label>University Name</label>
+                        <input type="text" name="name" placeholder="e.g. Saarland University" required>
+                    </div>
+
+                    <div class="field">
+                        <label>Country</label>
+                        <input type="text" name="country" placeholder="e.g. Germany" required>
+                    </div>
+
+                    <div class="field">
+                        <label>Course</label>
+                        <input type="text" name="course" placeholder="e.g. B.Sc. Computer Science">
+                    </div>
+
+                    <div class="field">
+                        <label>Deadline</label>
+                        <input type="date" name="deadline">
+                    </div>
+
+                    <div class="field">
+                        <label>Tuition</label>
+                        <input type="number" name="tuition" placeholder="Amount">
+                    </div>
+
+                    <div class="field">
+                        <label>Status</label>
+                        <select name="status">
+                            <option value="Researching">Researching</option>
+                            <option value="Planning to Apply">Planning to Apply</option>
+                            <option value="Applied">Applied</option>
+                            <option value="Accepted">Accepted</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Scholarship / Financial Aid</label>
+                    <input type="text" name="scholarship" placeholder="Scholarship name, amount or notes">
+                </div>
+
+                <div class="field">
+                    <label>Requirements</label>
+                    <textarea name="requirements" placeholder="General requirements or reminders"></textarea>
+                </div>
+
+                <div class="field">
+                    <label>Notes</label>
+                    <textarea name="notes" placeholder="Anything else you want to remember"></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="secondary-button" onclick="closeAddModal()">Cancel</button>
+                    <button type="submit" class="primary-button">Save University</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById("add-form-container");
+        const sidebar = document.getElementById("sidebar");
+
+        function openAddModal() {
+            modal.classList.remove("hidden");
+            modal.setAttribute("aria-hidden", "false");
+            document.body.classList.add("modal-open");
+            sidebar.classList.remove("mobile-open");
+        }
+
+        function closeAddModal() {
+            modal.classList.add("hidden");
+            modal.setAttribute("aria-hidden", "true");
+            document.body.classList.remove("modal-open");
+        }
+
+        function toggleFilters() {
+            document.getElementById("filter-panel").classList.toggle("hidden");
+        }
+
+        function toggleMobileMenu() {
+            sidebar.classList.toggle("mobile-open");
+        }
+
+        modal.addEventListener("click", function (event) {
+            if (event.target === modal) {
+                closeAddModal();
+            }
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape") {
+                closeAddModal();
+                sidebar.classList.remove("mobile-open");
+            }
+        });
+
+        document.querySelectorAll(".sidebar-nav a").forEach(link => {
+            link.addEventListener("click", () => sidebar.classList.remove("mobile-open"));
+        });
+
+        setTimeout(() => {
+            document.querySelectorAll(".toast").forEach(toast => {
+                toast.classList.add("toast-leave");
+                setTimeout(() => toast.remove(), 250);
+            });
+        }, 4000);
+    </script>
+
+    <script>
+        const gridViewButton =
+            document.getElementById("grid-view-button");
+
+        const showcaseViewButton =
+            document.getElementById("showcase-view-button");
+
+        const universityGrid =
+            document.querySelector(".university-grid");
+
+        const universitiesPage =
+            document.querySelector(".universities-page");
+
+        const universityCards =
+            universityGrid
+                ? Array.from(
+                    universityGrid.querySelectorAll(
+                        ".university-card"
+                    )
+                )
+                : [];
+
+
+        let activeUniversityIndex = 0;
+
+        let dragStartX = 0;
+        let dragStartY = 0;
+
+        let isDragging = false;
+        let interactionCard = null;
+        let dragAnimationFrame = null;
+        let latestPointerX = 0;
+
+        function clearDragStyles() {
+
+            universityCards.forEach(card => {
+
+                card.style.transform = "";
+                card.style.transition = "";
+                card.style.opacity = "";
+
+            });
+
+        }
+
+
+        function updateShowcaseCard() {
+
+            const total =
+                universityCards.length;
+
+            if (total === 0) {
+                return;
+            }
+
+
+            const previousIndex =
+                (
+                    activeUniversityIndex -
+                    1 +
+                    total
+                ) % total;
+
+
+            const nextIndex =
+                (
+                    activeUniversityIndex +
+                    1
+                ) % total;
+
+
+            universityCards.forEach(card => {
+
+                card.classList.remove(
+                    "showcase-active",
+                    "showcase-prev",
+                    "showcase-next",
+                    "showcase-hidden"
+                );
+
+                card.classList.add(
+                    "showcase-hidden"
+                );
+
+            });
+
+
+            universityCards[
+                activeUniversityIndex
+            ].classList.remove(
+                "showcase-hidden"
+            );
+
+            universityCards[
+                activeUniversityIndex
+            ].classList.add(
+                "showcase-active"
+            );
+
+
+            if (total > 1) {
+
+                universityCards[
+                    previousIndex
+                ].classList.remove(
+                    "showcase-hidden"
+                );
+
+                universityCards[
+                    previousIndex
+                ].classList.add(
+                    "showcase-prev"
+                );
+
+            }
+
+
+            if (total > 2) {
+
+                universityCards[
+                    nextIndex
+                ].classList.remove(
+                    "showcase-hidden"
+                );
+
+                universityCards[
+                    nextIndex
+                ].classList.add(
+                    "showcase-next"
+                );
+
+            }
+
+        }
+
+
+        function showGridView() {
+
+            clearDragStyles();
+
+            universitiesPage.classList.remove(
+                "showcase-mode"
+            );
+
+            universityGrid.classList.remove(
+                "showcase-view"
+            );
+
+
+            universityCards.forEach(card => {
+
+                card.classList.remove(
+                    "showcase-active",
+                    "showcase-prev",
+                    "showcase-next",
+                    "showcase-hidden"
+                );
+
+            });
+
+
+            gridViewButton.classList.add(
+                "active"
+            );
+
+            showcaseViewButton.classList.remove(
+                "active"
+            );
+            localStorage.setItem(
+                "unitrackUniversityView",
+                "grid"
+            );
+        }
+
+
+        function showShowcaseView() {
+
+            universitiesPage.classList.add(
+                "showcase-mode"
+            );
+
+            universityGrid.classList.add(
+                "showcase-view"
+            );
+
+
+            gridViewButton.classList.remove(
+                "active"
+            );
+
+            showcaseViewButton.classList.add(
+                "active"
+            );
+
+
+            updateShowcaseCard();
+            localStorage.setItem(
+                "unitrackUniversityView",
+                "showcase"
+            );
+        }
+
+
+        if (
+            universityGrid &&
+            universityCards.length > 0
+        ) {
+
+
+            gridViewButton.addEventListener(
+                "click",
+                showGridView
+            );
+
+
+            showcaseViewButton.addEventListener(
+                "click",
+                showShowcaseView
+            );
+
+
+            /* =========================
+               START INTERACTION
+               ========================= */
+
+            universityGrid.addEventListener(
+                "pointerdown",
+                function (event) {
+
+                    if (
+                        !universityGrid.classList.contains(
+                            "showcase-view"
+                        )
+                    ) {
+                        return;
+                    }
+
+
+                    if (
+                        event.target.closest(
+                            "a, button, form, details, summary, input, select, textarea"
+                        )
+                    ) {
+                        return;
+                    }
+
+
+                    const card =
+                        event.target.closest(
+                            ".university-card"
+                        );
+
+
+                    if (
+                        !card ||
+                        !card.classList.contains(
+                            "showcase-active"
+                        )
+                    ) {
+                        return;
+                    }
+
+
+                    interactionCard = card;
+
+                    dragStartX = event.clientX;
+                    dragStartY = event.clientY;
+
+                    isDragging = true;
+
+
+                    interactionCard.style.transition =
+                        "none";
+
+
+                    universityGrid.classList.add(
+                        "is-dragging"
+                    );
+
+
+                    universityGrid.setPointerCapture(
+                        event.pointerId
+                    );
+
+                }
+            );
+
+
+            /* =========================
+               LIVE DRAG
+               ========================= */
+
+            universityGrid.addEventListener(
+                "pointermove",
+                function (event) {
+
+                    if (
+                        !isDragging ||
+                        !interactionCard
+                    ) {
+                        return;
+                    }
+
+
+                    latestPointerX = event.clientX;
+
+
+                    if (dragAnimationFrame) {
+                        return;
+                    }
+
+
+                    dragAnimationFrame =
+                        requestAnimationFrame(
+                            function () {
+
+                                const distanceX =
+                                    latestPointerX -
+                                    dragStartX;
+
+
+                                const limitedX =
+                                    Math.max(
+                                        -220,
+                                        Math.min(
+                                            220,
+                                            distanceX
+                                        )
+                                    );
+
+
+                                const progress =
+                                    Math.min(
+                                        Math.abs(limitedX) / 220,
+                                        1
+                                    );
+
+
+                                const rotation =
+                                    limitedX / 14;
+
+
+                                const previousCard =
+                                    universityGrid.querySelector(
+                                        ".showcase-prev"
+                                    );
+
+
+                                const nextCard =
+                                    universityGrid.querySelector(
+                                        ".showcase-next"
+                                    );
+
+
+                                const cardWidth =
+                                    interactionCard
+                                        .getBoundingClientRect()
+                                        .width;
+
+
+                                const sideOffset =
+                                    cardWidth * 0.78;
+
+
+                                /* =====================
+                                   ACTIVE CARD
+                                   ===================== */
+
+                                interactionCard.style.transition =
+                                    "none";
+
+
+                                interactionCard.style.transform =
+                                    `
+                        translate(-50%, -50%)
+                        translate3d(${limitedX}px, 0, 0)
+                        rotateY(${rotation}deg)
+                        scale(1)
+                        `;
+
+
+                                /*
+                                 * DRAGGING LEFT
+                                 * Next card comes forward.
+                                 */
+
+                                if (limitedX < 0) {
+
+                                    if (nextCard) {
+
+                                        const nextX =
+                                            sideOffset *
+                                            (1 - progress);
+
+
+                                        const nextRotation =
+                                            -58 *
+                                            (1 - progress);
+
+
+                                        const nextScale =
+                                            0.82 +
+                                            (0.18 * progress);
+
+
+                                        nextCard.style.transition =
+                                            "none";
+
+
+                                        nextCard.style.transform =
+                                            `
+                                translate(-50%, -50%)
+                                translate3d(${nextX}px, 0, 0)
+                                rotateY(${nextRotation}deg)
+                                scale(${nextScale})
+                                `;
+
+
+                                        nextCard.style.opacity =
+                                            0.30 +
+                                            (0.70 * progress);
+
+                                    }
+
+
+                                    if (previousCard) {
+
+                                        const previousX =
+                                            -sideOffset *
+                                            (
+                                                1 +
+                                                (0.25 * progress)
+                                            );
+
+
+                                        previousCard.style.transition =
+                                            "none";
+
+
+                                        previousCard.style.transform =
+                                            `
+                                translate(-50%, -50%)
+                                translate3d(${previousX}px, 0, 0)
+                                rotateY(${58 + (10 * progress)}deg)
+                                scale(.82)
+                                `;
+
+
+                                        previousCard.style.opacity =
+                                            0.30 *
+                                            (1 - progress);
+
+                                    }
+
+                                }
+
+
+                                /*
+                                 * DRAGGING RIGHT
+                                 * Previous card comes forward.
+                                 */
+
+                                else if (limitedX > 0) {
+
+                                    if (previousCard) {
+
+                                        const previousX =
+                                            -sideOffset *
+                                            (1 - progress);
+
+
+                                        const previousRotation =
+                                            58 *
+                                            (1 - progress);
+
+
+                                        const previousScale =
+                                            0.82 +
+                                            (0.18 * progress);
+
+
+                                        previousCard.style.transition =
+                                            "none";
+
+
+                                        previousCard.style.transform =
+                                            `
+                                translate(-50%, -50%)
+                                translate3d(${previousX}px, 0, 0)
+                                rotateY(${previousRotation}deg)
+                                scale(${previousScale})
+                                `;
+
+
+                                        previousCard.style.opacity =
+                                            0.30 +
+                                            (0.70 * progress);
+
+                                    }
+
+
+                                    if (nextCard) {
+
+                                        const nextX =
+                                            sideOffset *
+                                            (
+                                                1 +
+                                                (0.25 * progress)
+                                            );
+
+
+                                        nextCard.style.transition =
+                                            "none";
+
+
+                                        nextCard.style.transform =
+                                            `
+                                translate(-50%, -50%)
+                                translate3d(${nextX}px, 0, 0)
+                                rotateY(${-58 - (10 * progress)}deg)
+                                scale(.82)
+                                `;
+
+
+                                        nextCard.style.opacity =
+                                            0.30 *
+                                            (1 - progress);
+
+                                    }
+
+                                }
+
+
+                                dragAnimationFrame = null;
+
+                            }
+                        );
+
+                }
+            );
+
+
+            /* =========================
+               RELEASE
+               ========================= */
+
+            universityGrid.addEventListener(
+                "pointerup",
+                function (event) {
+
+                    if (
+                        !isDragging ||
+                        !interactionCard
+                    ) {
+                        return;
+                    }
+
+
+                    isDragging = false;
+                    if (dragAnimationFrame) {
+
+                        cancelAnimationFrame(
+                            dragAnimationFrame
+                        );
+
+                        dragAnimationFrame = null;
+
+                    }
+
+                    universityGrid.classList.remove(
+                        "is-dragging"
+                    );
+
+
+                    const distanceX =
+                        event.clientX - dragStartX;
+
+                    const distanceY =
+                        event.clientY - dragStartY;
+
+
+                    const wasSwipe =
+                        Math.abs(distanceX) >= 75 &&
+                        Math.abs(distanceX) >
+                        Math.abs(distanceY);
+
+
+                    /*
+                     * SWIPE / DRAG
+                     */
+                    if (wasSwipe) {
+
+                        clearDragStyles();
+
+
+                        if (distanceX < 0) {
+
+                            activeUniversityIndex =
+                                (
+                                    activeUniversityIndex + 1
+                                ) %
+                                universityCards.length;
+
+                        }
+
+                        else {
+
+                            activeUniversityIndex =
+                                (
+                                    activeUniversityIndex -
+                                    1 +
+                                    universityCards.length
+                                ) %
+                                universityCards.length;
+
+                        }
+
+
+                        requestAnimationFrame(
+                            updateShowcaseCard
+                        );
+
+                        interactionCard = null;
+
+                        return;
+                    }
+
+
+                    /*
+                     * NORMAL CLICK
+                     */
+                    if (
+                        Math.abs(distanceX) <= 12 &&
+                        Math.abs(distanceY) <= 12
+                    ) {
+
+                        const cardBox =
+                            interactionCard
+                                .getBoundingClientRect();
+
+
+                        const clickPosition =
+                            event.clientX -
+                            cardBox.left;
+
+
+                        clearDragStyles();
+
+
+                        if (
+                            clickPosition <
+                            cardBox.width / 2
+                        ) {
+
+                            activeUniversityIndex =
+                                (
+                                    activeUniversityIndex -
+                                    1 +
+                                    universityCards.length
+                                ) %
+                                universityCards.length;
+
+                        }
+
+                        else {
+
+                            activeUniversityIndex =
+                                (
+                                    activeUniversityIndex + 1
+                                ) %
+                                universityCards.length;
+
+                        }
+
+
+                        requestAnimationFrame(
+                            updateShowcaseCard
+                        );
+
+                    }
+
+
+                    /*
+                     * Drag wasn't far enough.
+                     * Snap back to center.
+                     */
+                    else {
+
+                        interactionCard.style.transition =
+                            "transform 350ms cubic-bezier(.22,.75,.18,1)";
+
+                        interactionCard.style.transform =
+                            `
+                            translate(-50%, -50%)
+                            translateX(0)
+                            rotateY(0deg)
+                            scale(1)
+                            `;
+
+
+                        setTimeout(
+                            clearDragStyles,
+                            350
+                        );
+
+                    }
+
+
+                    interactionCard = null;
+
+                }
+            );
+
+
+            /* =========================
+               CANCEL
+               ========================= */
+
+            universityGrid.addEventListener(
+                "pointercancel",
+                function () {
+
+                    if (interactionCard) {
+
+                        interactionCard.style.transition =
+                            "transform 300ms ease";
+
+                        interactionCard.style.transform =
+                            `
+                            translate(-50%, -50%)
+                            translateX(0)
+                            rotateY(0deg)
+                            scale(1)
+                            `;
+
+                    }
+
+
+                    isDragging = false;
+                    interactionCard = null;
+
+
+                    universityGrid.classList.remove(
+                        "is-dragging"
+                    );
+
+
+                    setTimeout(
+                        clearDragStyles,
+                        300
+                    );
+
+                }
+            );
+            const savedUniversityView =
+                localStorage.getItem(
+                    "unitrackUniversityView"
+                );
+
+
+            if (
+                savedUniversityView === "showcase"
+            ) {
+
+                showShowcaseView();
+
+            }
+            else {
+
+                showGridView();
+
+            }
+
+        }
+    </script>
+</body>
+</html>

@@ -3,7 +3,8 @@ import hashlib
 import secrets
 import resend
 from datetime import datetime, date, timedelta, timezone
-
+import requests
+import random
 import psycopg2
 from dotenv import load_dotenv
 from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
@@ -21,6 +22,54 @@ def get_db_connection():
         sslmode="require",
         connect_timeout=10,
     )
+
+def get_university_image(university_name, country=""):
+    api_key = os.environ.get("PEXELS_API_KEY")
+
+    if not api_key:
+        return None, None, None
+
+    query = f"{university_name} {country} university campus".strip()
+
+    try:
+        response = requests.get(
+            "https://api.pexels.com/v1/search",
+            headers={
+                "Authorization": api_key
+            },
+            params={
+                "query": query,
+                "orientation": "landscape",
+                "per_page": 5,
+            },
+            timeout=8,
+        )
+
+        response.raise_for_status()
+
+        data = response.json()
+        photos = data.get("photos", [])
+
+        if not photos:
+            return None, None, None
+
+        photo = random.choice(photos)
+
+        image_url = photo["src"]["large"]
+        photographer = photo.get("photographer")
+        source_url = photo.get("url")
+
+        return image_url, photographer, source_url
+
+    except requests.RequestException as error:
+        print("Pexels image error:", error)
+        return None, None, None
+
+
+
+
+
+
 
 
 def parse_tuition(value):
@@ -82,6 +131,7 @@ def require_login():
         abort(404)
 
 @app.route("/")
+@app.route("/universities")
 def home():
     user_id = session["user_id"]
     search = request.args.get("search", "")
@@ -270,8 +320,14 @@ def home():
         cursor.close()
         connection.close()
 
+    template_name = (
+        "universities.html"
+        if request.path == "/universities"
+        else "index.html"
+    )
+
     return render_template(
-        "index.html",
+        template_name,
         universities=universities,
         countries=countries,
         search=search,
@@ -287,7 +343,6 @@ def home():
         readiness=readiness,
     )
 
-
 @app.route("/add", methods=["POST"])
 def add_university():
     name = request.form["name"]
@@ -300,6 +355,10 @@ def add_university():
     requirements = request.form["requirements"]
     notes = request.form["notes"]
 
+    image_url, image_photographer, image_source_url = (
+        get_university_image(name, country)
+    )
+
     connection = get_db_connection()
     cursor = connection.cursor()
 
@@ -308,10 +367,25 @@ def add_university():
             """
             INSERT INTO universities
             (
-                name, country, course, deadline, tuition,
-                status, scholarship, requirements, notes, user_id
+                name,
+                country,
+                course,
+                deadline,
+                tuition,
+                status,
+                scholarship,
+                requirements,
+                notes,
+                user_id,
+                image_url,
+                image_photographer,
+                image_source_url
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (
+                %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s,
+                %s, %s, %s
+            )
             """,
             (
                 name,
@@ -324,6 +398,9 @@ def add_university():
                 requirements,
                 notes,
                 session["user_id"],
+                image_url,
+                image_photographer,
+                image_source_url,
             ),
         )
 
@@ -337,7 +414,11 @@ def add_university():
         cursor.close()
         connection.close()
 
-    flash("University added successfully.", "success")
+    flash(
+        "University added successfully.",
+        "success",
+    )
+
     return redirect("/")
 
 
@@ -1226,6 +1307,15 @@ def reset_password(token):
 def logout():
     session.clear()
     return redirect("/login")
+
+
+
+
+
+
+
+
+
 
 
 if __name__ == "__main__":

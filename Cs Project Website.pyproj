@@ -34,9 +34,12 @@
     <Content Include=".env" />
     <Content Include=".gitignore" />
     <Content Include="index.html" />
-    <Content Include="Static\Style.css" />
+    <Content Include="Static\softAurora.js" />
+    <Content Include="Static\style.css" />
+    <Content Include="Static\style_backup.css" />
     <Content Include="Templates\edit.html" />
     <Content Include="Templates\forgot_password.html" />
+    <Content Include="Templates\universities.html" />
     <Content Include="Templates\index.html" />
     <Content Include="Templates\login.html" />
     <Content Include="Templates\register.html" />
